@@ -1,0 +1,39 @@
+{
+  "name": "trufle-admin-tests",
+  "version": "1.0.0",
+  "description": "Test suite for Trufle Admin Dashboard",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:auth": "jest tests/auth.test.js",
+    "test:inventory": "jest tests/inventory.test.js",
+    "test:users": "jest tests/user-management.test.js"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "jest": "^29.7.0",
+    "jest-environment-node": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "app/api/**/*.js",
+      "lib/**/*.js",
+      "components/**/*.jsx",
+      "!**/node_modules/**",
+      "!**/tests/**"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
+    ]
+  }
+}
