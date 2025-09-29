@@ -60,7 +60,7 @@ export function VendorModule() {
   // Load vendors from API
   useEffect(() => {
     loadVendors()
-  }, [filters])
+  }, [filters, pagination.page, pagination.limit])
 
   const loadVendors = async () => {
     try {
@@ -494,6 +494,88 @@ export function VendorModule() {
                     )}
                   </TableBody>
                 </Table>
+              )}
+              
+              {/* Pagination Controls */}
+              {pagination.pages > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-700">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-400">
+                      Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} vendors
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="page-size" className="text-sm text-gray-400">Show:</Label>
+                      <Select 
+                        value={pagination.limit.toString()} 
+                        onValueChange={(value) => {
+                          setPagination(prev => ({ ...prev, limit: parseInt(value), page: 1 }))
+                        }}
+                      >
+                        <SelectTrigger className="w-20 h-8 bg-gray-800/50 border-gray-700">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="25">25</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                        disabled={pagination.page <= 1}
+                        className="bg-gray-800/50 border-gray-700"
+                      >
+                        Previous
+                      </Button>
+                      
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                          const pageNum = pagination.page <= 3 
+                            ? i + 1 
+                            : pagination.page >= pagination.pages - 2
+                            ? pagination.pages - 4 + i
+                            : pagination.page - 2 + i
+                          
+                          if (pageNum < 1 || pageNum > pagination.pages) return null
+                          
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={pageNum === pagination.page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
+                              className={pageNum === pagination.page 
+                                ? "bg-blue-600 hover:bg-blue-700" 
+                                : "bg-gray-800/50 border-gray-700"
+                              }
+                            >
+                              {pageNum}
+                            </Button>
+                          )
+                        })}
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                        disabled={pagination.page >= pagination.pages}
+                        className="bg-gray-800/50 border-gray-700"
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '@/lib/mongodb';
 import { verifyToken } from '@/lib/auth';
+import { broadcastInventoryUpdate } from './events/route.js';
+import { getCollectionName, CATEGORY_DISPLAY } from '@/lib/schemas/inventory-schemas.js';
 
 export async function GET(request) {
   try {
@@ -21,7 +23,6 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Access denied. Inventory permission required.' }, { status: 403 });
     }
 
-    const collection = await getCollection('inventory');
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
     const category = searchParams.get('category');
@@ -29,35 +30,69 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
 
-    let query = {};
-    
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { location: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
-      ];
-    }
-    
-    if (category) {
-      query.category = category;
-    }
-    
-    if (status) {
-      query.status = status;
-    }
+    let allItems = [];
+    let totalCount = 0;
 
-    const skip = (page - 1) * limit;
-    const total = await collection.countDocuments(query);
-    const items = await collection.find(query).skip(skip).limit(limit).toArray();
+    // If category is specified, search only that collection
+    if (category && CATEGORY_DISPLAY[category]) {
+      const collectionName = getCollectionName(category);
+      const collection = await getCollection(collectionName);
+      
+      let query = {};
+      
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } }
+        ];
+      }
+      
+      if (status) {
+        query.available = status === 'available';
+      }
+
+      const skip = (page - 1) * limit;
+      totalCount = await collection.countDocuments(query);
+      allItems = await collection.find(query).skip(skip).limit(limit).toArray();
+    } else {
+      // Search all collections
+      const categories = Object.keys(CATEGORY_DISPLAY);
+      
+      for (const cat of categories) {
+        const collectionName = getCollectionName(cat);
+        const collection = await getCollection(collectionName);
+        
+        let query = {};
+        
+        if (search) {
+          query.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { description: { $regex: search, $options: 'i' } }
+          ];
+        }
+        
+        if (status) {
+          query.available = status === 'available';
+        }
+
+        const items = await collection.find(query).toArray();
+        allItems = allItems.concat(items);
+      }
+      
+      totalCount = allItems.length;
+      
+      // Apply pagination to combined results
+      const skip = (page - 1) * limit;
+      allItems = allItems.slice(skip, skip + limit);
+    }
 
     return NextResponse.json({
-      items,
+      items: allItems,
       pagination: {
         page,
         limit,
-        total,
-        pages: Math.ceil(total / limit)
+        total: totalCount,
+        pages: Math.ceil(totalCount / limit)
       }
     });
   } catch (error) {
@@ -85,57 +120,61 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Access denied. Inventory permission required.' }, { status: 403 });
     }
 
-    const {
-      name,
-      category,
-      description,
-      location,
-      value,
-      status,
-      supplier,
-      purchaseDate,
-      warrantyExpiry,
-      maintenanceSchedule,
-      specifications
-    } = await request.json();
+    const itemData = await request.json();
 
-    if (!name || !category || !location) {
-      return NextResponse.json({ error: 'Name, category, and location are required' }, { status: 400 });
+    if (!itemData.name || !itemData.category) {
+      return NextResponse.json({ error: 'Name and category are required' }, { status: 400 });
     }
 
-    const collection = await getCollection('inventory');
-    
-    // Generate unique ID
-    const count = await collection.countDocuments();
-    const id = `INV${String(count + 1).padStart(4, '0')}`;
+    // Validate category exists
+    if (!CATEGORY_DISPLAY[itemData.category]) {
+      return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
+    }
 
+    const collectionName = getCollectionName(itemData.category);
+    const collection = await getCollection(collectionName);
+    
+    // Generate unique ID based on category
+    const categoryPrefix = {
+      'charter_flights': 'CF',
+      'helicopters': 'HC',
+      'luxury_cars': 'LC',
+      'private_jets': 'PJ',
+      'super_cars': 'SC',
+      'yachts': 'YT'
+    }[itemData.category] || 'INV';
+
+    const lastItem = await collection.findOne({}).sort({ createdAt: -1 });
+    const lastIdNum = lastItem ? parseInt(lastItem._id.replace(categoryPrefix, '')) : 0;
+    const id = `${categoryPrefix}${String(lastIdNum + 1).padStart(3, '0')}`;
+
+    // Create item based on category-specific schema
     const newItem = {
-      id,
-      name,
-      category,
-      description: description || '',
-      location,
-      value: parseFloat(value) || 0,
-      status: status || 'available',
-      supplier: supplier || '',
-      purchaseDate: purchaseDate ? new Date(purchaseDate) : new Date(),
-      warrantyExpiry: warrantyExpiry ? new Date(warrantyExpiry) : null,
-      maintenanceSchedule: maintenanceSchedule || 'monthly',
-      specifications: specifications || {},
-      createdAt: new Date(),
-      updatedAt: new Date()
+      _id: id,
+      name: itemData.name,
+      description: itemData.description || '',
+      category: itemData.category,
+      available: itemData.available !== undefined ? itemData.available : true,
+      tags: itemData.tags || [],
+      images: itemData.images || [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...itemData // Include all other fields specific to the category
     };
 
     const result = await collection.insertOne(newItem);
 
-    if (result.insertedId) {
-      return NextResponse.json({ 
-        message: 'Inventory item created successfully', 
-        item: newItem 
-      }, { status: 201 });
-    } else {
-      return NextResponse.json({ error: 'Failed to create inventory item' }, { status: 500 });
-    }
+        if (result.insertedId) {
+          // Broadcast the update to all connected clients
+          broadcastInventoryUpdate('created', newItem);
+          
+          return NextResponse.json({ 
+            message: 'Inventory item created successfully', 
+            item: newItem 
+          }, { status: 201 });
+        } else {
+          return NextResponse.json({ error: 'Failed to create inventory item' }, { status: 500 });
+        }
   } catch (error) {
     console.error('Error creating inventory item:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

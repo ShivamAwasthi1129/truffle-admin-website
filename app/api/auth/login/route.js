@@ -28,7 +28,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    const token = generateToken(user);
+    const token = generateToken({
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      permissions: user.permissions || []
+    });
+
+    // Generate refresh token (valid for 7 days)
+    const refreshToken = generateToken({
+      id: user._id.toString(),
+      email: user.email,
+      type: 'refresh'
+    }, '7d');
 
     // Update last login
     await collection.updateOne(
@@ -38,14 +50,15 @@ export async function POST(request) {
 
     return NextResponse.json({ 
       message: 'Login successful', 
-      token, 
+      token,
+      refreshToken,
       user: { 
-        id: user._id, 
+        _id: user._id.toString(), 
         email: user.email, 
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role, 
-        permissions: user.permissions,
+        permissions: user.permissions || [],
         isActive: user.isActive,
         department: user.department,
         phone: user.phone

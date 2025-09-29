@@ -26,8 +26,10 @@ import {
   Calendar,
   XCircle
 } from "lucide-react"
+import { useAuth } from "@/lib/auth-context.jsx"
 
 export function UserRegistrationModule() {
+  const { user: currentUser } = useAuth()
   const [users, setUsers] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterRole, setFilterRole] = useState("all")
@@ -52,10 +54,30 @@ export function UserRegistrationModule() {
   })
 
   const availableRoles = [
-    { value: "super_admin", label: "Super Admin", description: "Full system access" },
-    { value: "admin", label: "Admin", description: "Operational management" },
-    { value: "billing_specialist", label: "Billing Specialist", description: "Financial management" },
-    { value: "custom", label: "Custom Role", description: "Create a new custom role" }
+    { 
+      value: "super_admin", 
+      label: "Super Admin", 
+      description: "Full system access",
+      defaultPermissions: ["inventory", "vendors", "clients", "concierges", "bookings", "service-commissions", "concierge-commissions", "analytics", "user-registration"]
+    },
+    { 
+      value: "admin", 
+      label: "Admin", 
+      description: "Operational management",
+      defaultPermissions: ["inventory", "vendors", "clients", "concierges", "bookings", "analytics"]
+    },
+    { 
+      value: "billing_specialist", 
+      label: "Billing Specialist", 
+      description: "Financial management",
+      defaultPermissions: ["service-commissions", "concierge-commissions", "analytics"]
+    },
+    { 
+      value: "custom", 
+      label: "Custom Role", 
+      description: "Create a new custom role",
+      defaultPermissions: []
+    }
   ]
 
   const departments = [
@@ -215,6 +237,12 @@ export function UserRegistrationModule() {
   }
 
   const handleToggleUserStatus = async (userId, isActive) => {
+    // Prevent super admin from deactivating themselves
+    if (currentUser && currentUser._id === userId && currentUser.role === 'super_admin' && !isActive) {
+      setError('Cannot deactivate your own super admin account')
+      return
+    }
+
     try {
       setLoading(true)
       setError("")
@@ -303,6 +331,15 @@ export function UserRegistrationModule() {
       permissions: prev.permissions.includes(permission)
         ? prev.permissions.filter(p => p !== permission)
         : [...prev.permissions, permission]
+    }))
+  }
+
+  const handleRoleChange = (roleValue) => {
+    const selectedRole = availableRoles.find(role => role.value === roleValue)
+    setNewUser(prev => ({
+      ...prev,
+      role: roleValue,
+      permissions: selectedRole ? selectedRole.defaultPermissions : []
     }))
   }
 
@@ -431,7 +468,10 @@ export function UserRegistrationModule() {
 
               <div>
                 <Label htmlFor="role">Role *</Label>
-                <Select value={newUser.role} onValueChange={(value) => setNewUser({...newUser, role: value, createCustomRole: value === 'custom'})}>
+                <Select value={newUser.role} onValueChange={(value) => {
+                  setNewUser({...newUser, role: value, createCustomRole: value === 'custom'})
+                  handleRoleChange(value)
+                }}>
                   <SelectTrigger className="bg-gray-800/50 border-gray-700">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
@@ -650,8 +690,9 @@ export function UserRegistrationModule() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleUserStatus(user._id, !user.isActive)}
-                            className={`${user.isActive ? 'text-red-400 hover:text-red-300 border-red-400/50' : 'text-green-400 hover:text-green-300 border-green-400/50'}`}
-                            title={user.isActive ? 'Deactivate User' : 'Activate User'}
+                            disabled={currentUser && currentUser._id === user._id && user.role === 'super_admin' && user.isActive}
+                            className={`${user.isActive ? 'text-red-400 hover:text-red-300 border-red-400/50' : 'text-green-400 hover:text-green-300 border-green-400/50'} ${currentUser && currentUser._id === user._id && user.role === 'super_admin' && user.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title={currentUser && currentUser._id === user._id && user.role === 'super_admin' && user.isActive ? 'Cannot deactivate your own super admin account' : (user.isActive ? 'Deactivate User' : 'Activate User')}
                           >
                             {user.isActive ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                           </Button>
@@ -709,6 +750,15 @@ function UserEditForm({ user, onSubmit, onCancel, availableRoles, availablePermi
     permissions: user.permissions || []
   })
 
+  const handleRoleChange = (roleValue) => {
+    const selectedRole = availableRoles.find(role => role.value === roleValue)
+    setFormData(prev => ({
+      ...prev,
+      role: roleValue,
+      permissions: selectedRole ? selectedRole.defaultPermissions : prev.permissions
+    }))
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
     onSubmit(user._id, formData)
@@ -738,7 +788,10 @@ function UserEditForm({ user, onSubmit, onCancel, availableRoles, availablePermi
       </div>
       <div>
         <Label htmlFor="edit-role">Role</Label>
-        <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
+        <Select value={formData.role} onValueChange={(value) => {
+          setFormData({...formData, role: value})
+          handleRoleChange(value)
+        }}>
           <SelectTrigger className="bg-gray-800/50 border-gray-700">
             <SelectValue />
           </SelectTrigger>

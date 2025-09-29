@@ -24,20 +24,14 @@ export default function UnauthorizedPage() {
             <p>Please contact your administrator if you believe this is an error.</p>
           </div>
           
-          <div className="flex space-x-2">
+          <div className="flex justify-center">
             <Button 
               variant="outline" 
-              onClick={() => router.back()}
-              className="flex-1"
+              onClick={() => router.push('/login')}
+              className="bg-gradient-to-r from-blue-500 to-purple-500"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Back
-            </Button>
-            <Button 
-              onClick={() => router.push('/')}
-              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500"
-            >
-              Dashboard
+              Go Back to Login
             </Button>
           </div>
         </CardContent>

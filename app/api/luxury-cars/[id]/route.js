@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '@/lib/mongodb';
 import { verifyToken } from '@/lib/auth';
-import { ObjectId } from 'mongodb';
-import { broadcastInventoryUpdate } from '../events/route.js';
-import { getCollectionName, CATEGORY_DISPLAY } from '@/lib/schemas/inventory-schemas.js';
 
 export async function GET(request, { params }) {
   try {
@@ -25,31 +22,16 @@ export async function GET(request, { params }) {
     }
 
     const { id } = params;
-    
-    // Try to find the item across all collections
-    let item = null;
-    let collectionName = null;
-    
-    for (const category of Object.keys(CATEGORY_DISPLAY)) {
-      const collName = getCollectionName(category);
-      const collection = await getCollection(collName);
-      
-      // Try both _id and id fields
-      item = await collection.findOne({ _id: id }) || await collection.findOne({ id: id });
-      
-      if (item) {
-        collectionName = collName;
-        break;
-      }
-    }
+    const collection = await getCollection('luxury_cars');
+    const item = await collection.findOne({ _id: id });
 
     if (!item) {
-      return NextResponse.json({ error: 'Inventory item not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Luxury car not found' }, { status: 404 });
     }
 
     return NextResponse.json({ item });
   } catch (error) {
-    console.error('Error fetching inventory item:', error);
+    console.error('Error fetching luxury car:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -78,50 +60,26 @@ export async function PUT(request, { params }) {
 
     // Remove fields that shouldn't be updated
     delete updateData._id;
-    delete updateData.id;
     delete updateData.createdAt;
 
-    // Find which collection contains this item
-    let collectionName = null;
-    let collection = null;
-    
-    for (const category of Object.keys(CATEGORY_DISPLAY)) {
-      const collName = getCollectionName(category);
-      const coll = await getCollection(collName);
-      
-      const existingItem = await coll.findOne({ _id: id }) || await coll.findOne({ id: id });
-      
-      if (existingItem) {
-        collectionName = collName;
-        collection = coll;
-        break;
-      }
-    }
-
-    if (!collection) {
-      return NextResponse.json({ error: 'Inventory item not found' }, { status: 404 });
-    }
-
+    const collection = await getCollection('luxury_cars');
     const result = await collection.updateOne(
       { _id: id },
       { $set: { ...updateData, updatedAt: new Date().toISOString() } }
     );
 
     if (result.matchedCount === 0) {
-      return NextResponse.json({ error: 'Inventory item not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Luxury car not found' }, { status: 404 });
     }
 
     const updatedItem = await collection.findOne({ _id: id });
 
-        // Broadcast the update to all connected clients
-        broadcastInventoryUpdate('updated', updatedItem);
-
-        return NextResponse.json({ 
-          message: 'Inventory item updated successfully', 
-          item: updatedItem 
-        });
+    return NextResponse.json({ 
+      message: 'Luxury car updated successfully', 
+      item: updatedItem 
+    });
   } catch (error) {
-    console.error('Error updating inventory item:', error);
+    console.error('Error updating luxury car:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -146,40 +104,16 @@ export async function DELETE(request, { params }) {
     }
 
     const { id } = params;
-    
-    // Find which collection contains this item
-    let collectionName = null;
-    let collection = null;
-    
-    for (const category of Object.keys(CATEGORY_DISPLAY)) {
-      const collName = getCollectionName(category);
-      const coll = await getCollection(collName);
-      
-      const existingItem = await coll.findOne({ _id: id }) || await coll.findOne({ id: id });
-      
-      if (existingItem) {
-        collectionName = collName;
-        collection = coll;
-        break;
-      }
-    }
-
-    if (!collection) {
-      return NextResponse.json({ error: 'Inventory item not found' }, { status: 404 });
-    }
-
+    const collection = await getCollection('luxury_cars');
     const result = await collection.deleteOne({ _id: id });
 
-        if (result.deletedCount === 0) {
-          return NextResponse.json({ error: 'Inventory item not found' }, { status: 404 });
-        }
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: 'Luxury car not found' }, { status: 404 });
+    }
 
-        // Broadcast the update to all connected clients
-        broadcastInventoryUpdate('deleted', { id });
-
-        return NextResponse.json({ message: 'Inventory item deleted successfully' });
+    return NextResponse.json({ message: 'Luxury car deleted successfully' });
   } catch (error) {
-    console.error('Error deleting inventory item:', error);
+    console.error('Error deleting luxury car:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

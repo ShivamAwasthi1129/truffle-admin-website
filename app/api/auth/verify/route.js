@@ -23,7 +23,7 @@ export async function GET(request) {
     }
     
     // Get user data
-    const user = await getUserById(decoded.userId)
+    const user = await getUserById(decoded.id)
     if (!user || !user.isActive) {
       return NextResponse.json(
         { error: 'User not found or inactive' },

@@ -15,12 +15,16 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     // Check for existing token and user data
     const storedToken = localStorage.getItem('token')
+    const storedRefreshToken = localStorage.getItem('refreshToken')
     const storedUser = localStorage.getItem('user')
     
     if (storedToken && storedUser) {
       setToken(storedToken)
       setUser(JSON.parse(storedUser))
       verifyToken(storedToken)
+    } else if (storedRefreshToken) {
+      // Try to refresh the token
+      refreshToken(storedRefreshToken)
     } else {
       setLoading(false)
     }
@@ -39,11 +43,45 @@ export function AuthProvider({ children }) {
         setUser(data.user)
         setToken(tokenToVerify)
       } else {
-        // Token is invalid, clear storage
-        logout()
+        // Token is invalid, try to refresh
+        const storedRefreshToken = localStorage.getItem('refreshToken')
+        if (storedRefreshToken) {
+          await refreshToken(storedRefreshToken)
+        } else {
+          logout()
+        }
       }
     } catch (error) {
       console.error('Token verification failed:', error)
+      logout()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const refreshToken = async (refreshTokenValue) => {
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: refreshTokenValue }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('refreshToken', data.refreshToken)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        setToken(data.token)
+        setUser(data.user)
+      } else {
+        // Refresh failed, logout
+        logout()
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error)
       logout()
     } finally {
       setLoading(false)
@@ -64,6 +102,7 @@ export function AuthProvider({ children }) {
 
       if (response.ok) {
         localStorage.setItem('token', data.token)
+        localStorage.setItem('refreshToken', data.refreshToken)
         localStorage.setItem('user', JSON.stringify(data.user))
         setToken(data.token)
         setUser(data.user)
@@ -78,6 +117,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
     setToken(null)
     setUser(null)
@@ -86,6 +126,13 @@ export function AuthProvider({ children }) {
 
   const hasPermission = (moduleName) => {
     if (!user) return false
+    
+    // Use user's actual permissions array if available, otherwise fall back to role-based permissions
+    if (user.permissions && Array.isArray(user.permissions)) {
+      return user.permissions.includes(moduleName)
+    }
+    
+    // Fallback to role-based permissions for backward compatibility
     const permissions = ROLE_PERMISSIONS[user.role] || []
     return permissions.includes(moduleName)
   }

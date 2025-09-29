@@ -28,6 +28,16 @@ export async function PUT(request, { params }) {
     // Remove password from update data if present
     delete updateData.password;
 
+    // Prevent super admin from deactivating themselves
+    if (decoded.id === id && updateData.isActive === false) {
+      const collection = await getCollection('users');
+      const user = await collection.findOne({ _id: new ObjectId(id) });
+      
+      if (user && user.role === 'super_admin') {
+        return NextResponse.json({ error: 'Cannot deactivate your own super admin account' }, { status: 400 });
+      }
+    }
+
     const collection = await getCollection('users');
     const result = await collection.updateOne(
       { _id: new ObjectId(id) },

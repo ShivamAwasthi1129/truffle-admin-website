@@ -16,7 +16,18 @@ export function ProtectedRoute({ children, requiredPermission = null }) {
       }
 
       if (requiredPermission && !hasPermission(requiredPermission)) {
-        router.push('/unauthorized')
+        // Instead of redirecting to unauthorized, redirect to the first available module
+        const availableModules = [
+          'inventory', 'vendors', 'clients', 'concierges', 'bookings',
+          'service-commissions', 'concierge-commissions', 'user-registration', 'users', 'analytics'
+        ]
+        
+        const firstAvailableModule = availableModules.find(module => hasPermission(module))
+        if (firstAvailableModule) {
+          router.push(`/?module=${firstAvailableModule}`)
+        } else {
+          router.push('/unauthorized')
+        }
         return
       }
     }
