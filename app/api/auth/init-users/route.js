@@ -4,7 +4,7 @@ import { hashPassword } from '@/lib/auth';
 
 export async function POST(request) {
   try {
-    const collection = await getCollection('users');
+    const collection = await getCollection('admin_users');
     
     // Check if users already exist
     const existingUsers = await collection.countDocuments();

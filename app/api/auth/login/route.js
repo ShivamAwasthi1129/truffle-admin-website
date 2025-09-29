@@ -10,7 +10,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const collection = await getCollection('users');
+    const collection = await getCollection('admin_users');
     const user = await collection.findOne({ email });
 
     if (!user) {

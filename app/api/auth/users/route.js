@@ -21,7 +21,7 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Access denied. Super admin role required.' }, { status: 403 });
     }
 
-    const collection = await getCollection('users');
+    const collection = await getCollection('admin_users');
     const users = await collection.find({}, { projection: { password: 0 } }).toArray();
 
     return NextResponse.json({ users });
@@ -56,7 +56,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const collection = await getCollection('users');
+    const collection = await getCollection('admin_users');
     const existingUser = await collection.findOne({ email });
 
     if (existingUser) {

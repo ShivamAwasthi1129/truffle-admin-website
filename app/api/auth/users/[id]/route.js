@@ -30,7 +30,7 @@ export async function PUT(request, { params }) {
 
     // Prevent super admin from deactivating themselves
     if (decoded.id === id && updateData.isActive === false) {
-      const collection = await getCollection('users');
+      const collection = await getCollection('admin_users');
       const user = await collection.findOne({ _id: new ObjectId(id) });
       
       if (user && user.role === 'super_admin') {
@@ -38,7 +38,7 @@ export async function PUT(request, { params }) {
       }
     }
 
-    const collection = await getCollection('users');
+    const collection = await getCollection('admin_users');
     const result = await collection.updateOne(
       { _id: new ObjectId(id) },
       { $set: { ...updateData, updatedAt: new Date() } }
@@ -83,7 +83,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
     }
 
-    const collection = await getCollection('users');
+    const collection = await getCollection('admin_users');
     const result = await collection.deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {

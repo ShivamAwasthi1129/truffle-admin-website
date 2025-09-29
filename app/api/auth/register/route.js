@@ -30,7 +30,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Custom role name is required when creating a custom role' }, { status: 400 });
     }
 
-    const collection = await getCollection('users');
+    const collection = await getCollection('admin_users');
     const existingUser = await collection.findOne({ email });
 
     if (existingUser) {

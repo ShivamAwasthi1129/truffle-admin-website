@@ -19,7 +19,7 @@ export async function POST(request) {
     }
 
     // Get user from database to ensure they still exist and are active
-    const collection = await getCollection('users');
+    const collection = await getCollection('admin_users');
     const user = await collection.findOne(
       { _id: new ObjectId(decoded.id), isActive: true },
       { projection: { password: 0 } }
