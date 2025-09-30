@@ -10,6 +10,7 @@ import { CharterFlightTable } from "@/components/charter-flights/charter-flight-
 import { HelicopterTable } from "@/components/helicopters/helicopter-table.jsx"
 import { LuxuryCarTable } from "@/components/luxury-cars/luxury-car-table.jsx"
 import { PrivateJetTable } from "@/components/private-jets/private-jet-table.jsx"
+import { SuperCarTable } from "@/components/super-cars/super-car-table.jsx"
 // Removed mock data import - using real data from database
 import { CATEGORY_DISPLAY } from "@/lib/schemas/inventory-schemas.js"
 import { 
@@ -357,6 +358,8 @@ export default function InventoryModule() {
               <LuxuryCarTable />
             ) : categoryId === 'private_jets' ? (
               <PrivateJetTable />
+            ) : categoryId === 'super_cars' ? (
+              <SuperCarTable />
             ) : (
               <InventoryTable
                 category={categoryId}
