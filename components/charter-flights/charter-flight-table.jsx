@@ -286,10 +286,11 @@ export function CharterFlightTable() {
                 <TableHeader>
                   <TableRow className="border-gray-700">
                     <TableHead className="text-gray-300">Aircraft</TableHead>
+                    <TableHead className="text-gray-300">Registration</TableHead>
                     <TableHead className="text-gray-300">Type</TableHead>
                     <TableHead className="text-gray-300">Location</TableHead>
                     <TableHead className="text-gray-300">Capacity</TableHead>
-                    <TableHead className="text-gray-300">Price</TableHead>
+                    <TableHead className="text-gray-300">Price/Hour</TableHead>
                     <TableHead className="text-gray-300">Rating</TableHead>
                     <TableHead className="text-gray-300">Status</TableHead>
                     <TableHead className="text-gray-300">Created</TableHead>
@@ -318,6 +319,16 @@ export function CharterFlightTable() {
                         </div>
                       </TableCell>
                       <TableCell className="text-gray-300">
+                        <div className="text-sm">
+                          {flight.registration_no || 'N/A'}
+                        </div>
+                        {flight.max_speed_knots > 0 && (
+                          <div className="text-xs text-gray-400">
+                            {flight.max_speed_knots} knots
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-gray-300">
                         {flight.aircraft_type || 'N/A'}
                       </TableCell>
                       <TableCell className="text-gray-300">
@@ -337,13 +348,8 @@ export function CharterFlightTable() {
                       <TableCell className="text-gray-300">
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-3 w-3" />
-                          <span>{formatPrice(flight.price, flight.currency)}</span>
+                          <span>{formatPrice(flight.price_per_hour, flight.currency)}/hr</span>
                         </div>
-                        {flight.price_per_hour > 0 && (
-                          <div className="text-xs text-gray-400">
-                            {formatPrice(flight.price_per_hour, flight.currency)}/hr
-                          </div>
-                        )}
                       </TableCell>
                       <TableCell className="text-gray-300">
                         {flight.rating > 0 ? (

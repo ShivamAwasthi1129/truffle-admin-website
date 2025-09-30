@@ -108,10 +108,12 @@ export async function PUT(request, { params }) {
 
     // Only allow schema-defined fields for update
     const allowedFields = [
-      'name', 'description', 'category', 'location', 'price', 'currency',
+      'name', 'description', 'category', 'location', 'currency',
       'tags', 'images', 'features', 'capacity', 'availability', 'rating',
       'reviews', 'aircraft_type', 'flight_number', 'base_location',
-      'range_km', 'price_per_hour', 'seats', 'available'
+      'range_km', 'price_per_hour', 'seats', 'available',
+      'registration_no', 'max_speed_knots', 'range', 'cabin_height',
+      'engine_type', 'last_maintenance', 'insurance_expiry'
     ]
     
     // Filter updateData to only include allowed fields
@@ -123,12 +125,15 @@ export async function PUT(request, { params }) {
     })
 
     // Ensure proper data types
-    if (filteredUpdateData.price) filteredUpdateData.price = parseFloat(filteredUpdateData.price);
     if (filteredUpdateData.price_per_hour) filteredUpdateData.price_per_hour = parseFloat(filteredUpdateData.price_per_hour);
     if (filteredUpdateData.capacity) filteredUpdateData.capacity = parseInt(filteredUpdateData.capacity);
     if (filteredUpdateData.seats) filteredUpdateData.seats = parseInt(filteredUpdateData.seats);
     if (filteredUpdateData.range_km) filteredUpdateData.range_km = parseInt(filteredUpdateData.range_km);
     if (filteredUpdateData.rating) filteredUpdateData.rating = parseFloat(filteredUpdateData.rating);
+    // New fields data type conversions
+    if (filteredUpdateData.max_speed_knots) filteredUpdateData.max_speed_knots = parseFloat(filteredUpdateData.max_speed_knots);
+    if (filteredUpdateData.range) filteredUpdateData.range = parseFloat(filteredUpdateData.range);
+    if (filteredUpdateData.cabin_height) filteredUpdateData.cabin_height = parseFloat(filteredUpdateData.cabin_height);
 
     // Ensure location coordinates are properly formatted
     if (filteredUpdateData.location) {

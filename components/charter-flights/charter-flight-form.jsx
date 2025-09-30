@@ -43,7 +43,6 @@ export function CharterFlightForm({
         coordinates: [0, 0]
       }
     },
-    price: 0,
     currency: "USD",
     tags: [],
     images: [],
@@ -59,7 +58,15 @@ export function CharterFlightForm({
     range_km: 0,
     price_per_hour: 0,
     seats: 0,
-    available: true
+    available: true,
+    // New fields as per requirements
+    registration_no: "",
+    max_speed_knots: 0,
+    range: 0,
+    cabin_height: 0,
+    engine_type: "",
+    last_maintenance: "",
+    insurance_expiry: ""
   })
   
   const [errors, setErrors] = useState({})
@@ -84,7 +91,6 @@ export function CharterFlightForm({
             coordinates: [0, 0]
           }
         },
-        price: editingItem.price || 0,
         currency: editingItem.currency || "USD",
         tags: editingItem.tags || [],
         images: editingItem.images || [],
@@ -100,7 +106,15 @@ export function CharterFlightForm({
         range_km: editingItem.range_km || 0,
         price_per_hour: editingItem.price_per_hour || 0,
         seats: editingItem.seats || 0,
-        available: editingItem.available !== undefined ? editingItem.available : true
+        available: editingItem.available !== undefined ? editingItem.available : true,
+        // New fields as per requirements
+        registration_no: editingItem.registration_no || "",
+        max_speed_knots: editingItem.max_speed_knots || 0,
+        range: editingItem.range || 0,
+        cabin_height: editingItem.cabin_height || 0,
+        engine_type: editingItem.engine_type || "",
+        last_maintenance: editingItem.last_maintenance || "",
+        insurance_expiry: editingItem.insurance_expiry || ""
       })
     } else {
       setFormData({
@@ -117,7 +131,6 @@ export function CharterFlightForm({
             coordinates: [0, 0]
           }
         },
-        price: 0,
         currency: "USD",
         tags: [],
         images: [],
@@ -133,7 +146,15 @@ export function CharterFlightForm({
         range_km: 0,
         price_per_hour: 0,
         seats: 0,
-        available: true
+        available: true,
+        // New fields as per requirements
+        registration_no: "",
+        max_speed_knots: 0,
+        range: 0,
+        cabin_height: 0,
+        engine_type: "",
+        last_maintenance: "",
+        insurance_expiry: ""
       })
     }
     setErrors({})
@@ -145,7 +166,6 @@ export function CharterFlightForm({
     if (!formData.name.trim()) newErrors.name = "Name is required"
     if (!formData.description.trim()) newErrors.description = "Description is required"
     if (!formData.aircraft_type.trim()) newErrors.aircraft_type = "Aircraft type is required"
-    if (formData.price <= 0) newErrors.price = "Valid price is required"
     if (formData.capacity <= 0) newErrors.capacity = "Valid capacity is required"
     if (!formData.location.address.trim()) newErrors.location = "Location address is required"
     
@@ -166,7 +186,6 @@ export function CharterFlightForm({
         description: formData.description,
         category: formData.category,
         location: formData.location,
-        price: parseFloat(formData.price) || 0,
         currency: formData.currency,
         tags: formData.tags,
         images: formData.images,
@@ -182,7 +201,15 @@ export function CharterFlightForm({
         range_km: parseInt(formData.range_km) || 0,
         price_per_hour: parseFloat(formData.price_per_hour) || 0,
         seats: parseInt(formData.seats) || 0,
-        available: formData.available
+        available: formData.available,
+        // New fields as per requirements
+        registration_no: formData.registration_no,
+        max_speed_knots: parseFloat(formData.max_speed_knots) || 0,
+        range: parseFloat(formData.range) || 0,
+        cabin_height: parseFloat(formData.cabin_height) || 0,
+        engine_type: formData.engine_type,
+        last_maintenance: formData.last_maintenance,
+        insurance_expiry: formData.insurance_expiry
       }
       
       // Ensure location coordinates are properly formatted
@@ -306,9 +333,10 @@ export function CharterFlightForm({
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-gray-700">
+            <TabsList className="grid w-full grid-cols-6 bg-gray-700">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="aircraft">Aircraft Details</TabsTrigger>
+              <TabsTrigger value="technical">Technical Specs</TabsTrigger>
               <TabsTrigger value="location">Location & Pricing</TabsTrigger>
               <TabsTrigger value="features">Features & Tags</TabsTrigger>
               <TabsTrigger value="media">Media</TabsTrigger>
@@ -464,6 +492,96 @@ export function CharterFlightForm({
               </div>
             </TabsContent>
 
+            <TabsContent value="technical" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="registration_no">Registration Number</Label>
+                  <Input
+                    id="registration_no"
+                    value={formData.registration_no}
+                    onChange={(e) => handleInputChange('registration_no', e.target.value)}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="N123CF"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="max_speed_knots">Max Speed (knots)</Label>
+                  <Input
+                    id="max_speed_knots"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.max_speed_knots}
+                    onChange={(e) => handleInputChange('max_speed_knots', parseFloat(e.target.value))}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="488"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="range">Range (nm)</Label>
+                  <Input
+                    id="range"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.range}
+                    onChange={(e) => handleInputChange('range', parseFloat(e.target.value))}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="5200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cabin_height">Cabin Height (ft)</Label>
+                  <Input
+                    id="cabin_height"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.cabin_height}
+                    onChange={(e) => handleInputChange('cabin_height', parseFloat(e.target.value))}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="6.2"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="engine_type">Engine Type</Label>
+                  <Input
+                    id="engine_type"
+                    value={formData.engine_type}
+                    onChange={(e) => handleInputChange('engine_type', e.target.value)}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="Pratt & Whitney PW307D"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="last_maintenance">Last Maintenance Date</Label>
+                  <Input
+                    id="last_maintenance"
+                    type="date"
+                    value={formData.last_maintenance}
+                    onChange={(e) => handleInputChange('last_maintenance', e.target.value)}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="insurance_expiry">Insurance Expiry Date</Label>
+                  <Input
+                    id="insurance_expiry"
+                    type="date"
+                    value={formData.insurance_expiry}
+                    onChange={(e) => handleInputChange('insurance_expiry', e.target.value)}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
             <TabsContent value="location" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -513,20 +631,6 @@ export function CharterFlightForm({
                     className="bg-gray-700/50 border-gray-600 text-white"
                     placeholder="-0.4543"
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="price">Base Price (USD) *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
-                    className="bg-gray-700/50 border-gray-600 text-white"
-                    placeholder="12000"
-                  />
-                  {errors.price && <p className="text-red-400 text-sm">{errors.price}</p>}
                 </div>
 
                 <div className="space-y-2">
