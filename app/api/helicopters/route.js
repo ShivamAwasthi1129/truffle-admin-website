@@ -110,9 +110,10 @@ export async function POST(request) {
 
     // Only allow schema-defined fields for creation
     const allowedFields = [
-      'name', 'description', 'category', 'location', 'price', 'currency',
+      'name', 'description', 'category', 'location', 'currency',
       'tags', 'images', 'features', 'capacity', 'availability', 'rating',
-      'reviews', 'model', 'seats', 'range_km', 'base_location', 'price_per_hour', 'available'
+      'reviews', 'model', 'seats', 'range_km', 'base_location', 'price_per_hour', 'available',
+      'max_speed_knots', 'range', 'last_maintenance', 'insurance_expiry', 'cabin_height', 'engine_type', 'registration_no'
     ]
     
     // Filter itemData to only include allowed fields
@@ -138,7 +139,6 @@ export async function POST(request) {
           coordinates: [0, 0]
         }
       },
-      price: parseFloat(filteredItemData.price) || 0,
       currency: filteredItemData.currency || 'USD',
       tags: filteredItemData.tags || [],
       images: filteredItemData.images || [],
@@ -159,6 +159,14 @@ export async function POST(request) {
       },
       price_per_hour: parseFloat(filteredItemData.price_per_hour) || 0,
       available: filteredItemData.available !== undefined ? filteredItemData.available : true,
+      // New fields as per requirements
+      max_speed_knots: parseFloat(filteredItemData.max_speed_knots) || 0,
+      range: parseFloat(filteredItemData.range) || 0,
+      last_maintenance: filteredItemData.last_maintenance || '',
+      insurance_expiry: filteredItemData.insurance_expiry || '',
+      cabin_height: parseFloat(filteredItemData.cabin_height) || 0,
+      engine_type: filteredItemData.engine_type || '',
+      registration_no: filteredItemData.registration_no || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

@@ -327,10 +327,11 @@ export function HelicopterTable() {
                 <TableHeader>
                   <TableRow className="border-gray-700">
                     <TableHead className="text-gray-300">Helicopter</TableHead>
+                    <TableHead className="text-gray-300">Registration</TableHead>
                     <TableHead className="text-gray-300">Model</TableHead>
                     <TableHead className="text-gray-300">Location</TableHead>
                     <TableHead className="text-gray-300">Capacity</TableHead>
-                    <TableHead className="text-gray-300">Price</TableHead>
+                    <TableHead className="text-gray-300">Price/Hour</TableHead>
                     <TableHead className="text-gray-300">Rating</TableHead>
                     <TableHead className="text-gray-300">Status</TableHead>
                     <TableHead className="text-gray-300">Created</TableHead>
@@ -359,6 +360,16 @@ export function HelicopterTable() {
                         </div>
                       </TableCell>
                       <TableCell className="text-gray-300">
+                        <div className="text-sm">
+                          {helicopter.registration_no || 'N/A'}
+                        </div>
+                        {helicopter.max_speed_knots > 0 && (
+                          <div className="text-xs text-gray-400">
+                            {helicopter.max_speed_knots} knots
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-gray-300">
                         {helicopter.model || 'N/A'}
                       </TableCell>
                       <TableCell className="text-gray-300">
@@ -378,13 +389,8 @@ export function HelicopterTable() {
                       <TableCell className="text-gray-300">
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-3 w-3" />
-                          <span>{formatPrice(helicopter.price, helicopter.currency)}</span>
+                          <span>{formatPrice(helicopter.price_per_hour, helicopter.currency)}/hr</span>
                         </div>
-                        {helicopter.price_per_hour > 0 && (
-                          <div className="text-xs text-gray-400">
-                            {formatPrice(helicopter.price_per_hour, helicopter.currency)}/hr
-                          </div>
-                        )}
                       </TableCell>
                       <TableCell className="text-gray-300">
                         {helicopter.rating > 0 ? (
