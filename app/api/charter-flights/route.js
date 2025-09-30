@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '@/lib/mongodb';
 import { verifyToken } from '@/lib/auth';
+import { ObjectId } from 'mongodb';
 
 export async function GET(request) {
   try {
@@ -36,12 +37,27 @@ export async function GET(request) {
         { name: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { aircraft_type: { $regex: search, $options: 'i' } },
-        { flight_number: { $regex: search, $options: 'i' } }
+        { flight_number: { $regex: search, $options: 'i' } },
+        { 'location.address': { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } },
+        { features: { $regex: search, $options: 'i' } }
       ];
     }
     
     if (status) {
-      query.available = status === 'available';
+      if (status === 'available') {
+        query.$or = [
+          { availability: 'available' },
+          { available: true }
+        ];
+      } else if (status === 'unavailable') {
+        query.$or = [
+          { availability: 'unavailable' },
+          { available: false }
+        ];
+      } else {
+        query.availability = status;
+      }
     }
 
     const skip = (page - 1) * limit;
@@ -84,33 +100,63 @@ export async function POST(request) {
 
     const itemData = await request.json();
 
-    if (!itemData.name || !itemData.aircraft_type || !itemData.flight_number) {
-      return NextResponse.json({ error: 'Name, aircraft type, and flight number are required' }, { status: 400 });
+    if (!itemData.name || !itemData.description) {
+      return NextResponse.json({ error: 'Name and description are required' }, { status: 400 });
     }
 
     const collection = await getCollection('charter_flights');
     
-    // Generate unique ID
-    const lastItem = await collection.findOne({}).sort({ createdAt: -1 });
-    const lastIdNum = lastItem ? parseInt(lastItem._id.replace('CF', '')) : 0;
-    const id = `CF${String(lastIdNum + 1).padStart(3, '0')}`;
+    // Generate unique ID using MongoDB ObjectId
+    const id = new ObjectId();
+
+    // Only allow schema-defined fields for creation
+    const allowedFields = [
+      'name', 'description', 'category', 'location', 'price', 'currency',
+      'tags', 'images', 'features', 'capacity', 'availability', 'rating',
+      'reviews', 'aircraft_type', 'flight_number', 'base_location',
+      'range_km', 'price_per_hour', 'seats', 'available'
+    ]
+    
+    // Filter itemData to only include allowed fields
+    const filteredItemData = {}
+    allowedFields.forEach(field => {
+      if (itemData[field] !== undefined) {
+        filteredItemData[field] = itemData[field]
+      }
+    })
 
     const newItem = {
       _id: id,
-      name: itemData.name,
-      flight_number: itemData.flight_number,
-      aircraft_type: itemData.aircraft_type,
-      from: itemData.from || {},
-      to: itemData.to || {},
-      departure_time: itemData.departure_time,
-      arrival_time: itemData.arrival_time,
-      price: itemData.price || 0,
-      tags: itemData.tags || [],
-      description: itemData.description || '',
-      available: itemData.available !== undefined ? itemData.available : true,
-      images: itemData.images || [],
-      seats: itemData.seats || 0,
+      name: filteredItemData.name,
+      description: filteredItemData.description,
       category: 'charter_flights',
+      location: filteredItemData.location || {
+        address: '',
+        place_id: '',
+        lat: 0,
+        lng: 0,
+        coord: {
+          type: 'Point',
+          coordinates: [0, 0]
+        }
+      },
+      price: parseFloat(filteredItemData.price) || 0,
+      currency: filteredItemData.currency || 'USD',
+      tags: filteredItemData.tags || [],
+      images: filteredItemData.images || [],
+      features: filteredItemData.features || [],
+      capacity: parseInt(filteredItemData.capacity) || 0,
+      availability: filteredItemData.availability || 'available',
+      rating: parseFloat(filteredItemData.rating) || 0,
+      reviews: filteredItemData.reviews || [],
+      // Additional fields
+      aircraft_type: filteredItemData.aircraft_type || '',
+      flight_number: filteredItemData.flight_number || '',
+      base_location: filteredItemData.base_location || '',
+      range_km: parseInt(filteredItemData.range_km) || 0,
+      price_per_hour: parseFloat(filteredItemData.price_per_hour) || 0,
+      seats: parseInt(filteredItemData.seats) || parseInt(filteredItemData.capacity) || 0,
+      available: filteredItemData.available !== undefined ? filteredItemData.available : true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

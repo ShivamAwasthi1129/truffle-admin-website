@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.j
 import { Alert, AlertDescription } from "@/components/ui/alert.jsx"
 import { InventoryTable } from "@/components/inventory/inventory-table.jsx"
 import { InventoryForm } from "@/components/inventory/inventory-form.jsx"
+import { CharterFlightTable } from "@/components/charter-flights/charter-flight-table.jsx"
 // Removed mock data import - using real data from database
 import { CATEGORY_DISPLAY } from "@/lib/schemas/inventory-schemas.js"
 import { 
@@ -345,14 +346,18 @@ export default function InventoryModule() {
 
         {Object.entries(CATEGORY_DISPLAY).map(([categoryId, categoryInfo]) => (
           <TabsContent key={categoryId} value={categoryId} className="mt-6">
-            <InventoryTable
-              category={categoryId}
-              items={getFilteredItems(categoryId)}
-              onAdd={handleAdd}
-              onEdit={handleEdit}
-              onDelete={(itemId) => handleDelete(itemId, categoryId)}
-              onView={handleView}
-            />
+            {categoryId === 'charter_flights' ? (
+              <CharterFlightTable />
+            ) : (
+              <InventoryTable
+                category={categoryId}
+                items={getFilteredItems(categoryId)}
+                onAdd={handleAdd}
+                onEdit={handleEdit}
+                onDelete={(itemId) => handleDelete(itemId, categoryId)}
+                onView={handleView}
+              />
+            )}
           </TabsContent>
         ))}
       </Tabs>
