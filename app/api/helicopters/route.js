@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '@/lib/mongodb';
 import { verifyToken } from '@/lib/auth';
+import { ObjectId } from 'mongodb';
 
 export async function GET(request) {
   try {
@@ -35,12 +36,27 @@ export async function GET(request) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
-        { model: { $regex: search, $options: 'i' } }
+        { model: { $regex: search, $options: 'i' } },
+        { 'location.address': { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } },
+        { features: { $regex: search, $options: 'i' } }
       ];
     }
     
     if (status) {
-      query.available = status === 'available';
+      if (status === 'available') {
+        query.$or = [
+          { availability: 'available' },
+          { available: true }
+        ];
+      } else if (status === 'unavailable') {
+        query.$or = [
+          { availability: 'unavailable' },
+          { available: false }
+        ];
+      } else {
+        query.availability = status;
+      }
     }
 
     const skip = (page - 1) * limit;
@@ -83,33 +99,81 @@ export async function POST(request) {
 
     const itemData = await request.json();
 
-    if (!itemData.name || !itemData.model) {
-      return NextResponse.json({ error: 'Name and model are required' }, { status: 400 });
+    if (!itemData.name || !itemData.description) {
+      return NextResponse.json({ error: 'Name and description are required' }, { status: 400 });
     }
 
     const collection = await getCollection('helicopters');
     
-    // Generate unique ID
-    const lastItem = await collection.findOne({}).sort({ createdAt: -1 });
-    const lastIdNum = lastItem ? parseInt(lastItem._id.replace('HC', '')) : 0;
-    const id = `HC${String(lastIdNum + 1).padStart(3, '0')}`;
+    // Generate unique ID using MongoDB ObjectId
+    const id = new ObjectId();
+
+    // Only allow schema-defined fields for creation
+    const allowedFields = [
+      'name', 'description', 'category', 'location', 'price', 'currency',
+      'tags', 'images', 'features', 'capacity', 'availability', 'rating',
+      'reviews', 'model', 'seats', 'range_km', 'base_location', 'price_per_hour', 'available'
+    ]
+    
+    // Filter itemData to only include allowed fields
+    const filteredItemData = {}
+    allowedFields.forEach(field => {
+      if (itemData[field] !== undefined) {
+        filteredItemData[field] = itemData[field]
+      }
+    })
 
     const newItem = {
       _id: id,
-      name: itemData.name,
-      model: itemData.model,
-      seats: itemData.seats || 0,
-      range_km: itemData.range_km || 0,
-      base_location: itemData.base_location || {},
-      price_per_hour: itemData.price_per_hour || 0,
-      tags: itemData.tags || [],
-      description: itemData.description || '',
-      available: itemData.available !== undefined ? itemData.available : true,
-      images: itemData.images || [],
+      name: filteredItemData.name,
+      description: filteredItemData.description,
       category: 'helicopters',
+      location: filteredItemData.location || {
+        address: '',
+        place_id: '',
+        lat: 0,
+        lng: 0,
+        coord: {
+          type: 'Point',
+          coordinates: [0, 0]
+        }
+      },
+      price: parseFloat(filteredItemData.price) || 0,
+      currency: filteredItemData.currency || 'USD',
+      tags: filteredItemData.tags || [],
+      images: filteredItemData.images || [],
+      features: filteredItemData.features || [],
+      capacity: parseInt(filteredItemData.capacity) || 0,
+      availability: filteredItemData.availability || 'available',
+      rating: parseFloat(filteredItemData.rating) || 0,
+      reviews: filteredItemData.reviews || [],
+      // Additional fields
+      model: filteredItemData.model || '',
+      seats: parseInt(filteredItemData.seats) || 0,
+      range_km: parseInt(filteredItemData.range_km) || 0,
+      base_location: filteredItemData.base_location || {
+        address: '',
+        place_id: '',
+        lat: 0,
+        lng: 0
+      },
+      price_per_hour: parseFloat(filteredItemData.price_per_hour) || 0,
+      available: filteredItemData.available !== undefined ? filteredItemData.available : true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+
+    // Ensure location coordinates are properly formatted
+    if (newItem.location) {
+      newItem.location.lat = parseFloat(newItem.location.lat) || 0;
+      newItem.location.lng = parseFloat(newItem.location.lng) || 0;
+      if (newItem.location.coord && newItem.location.coord.coordinates) {
+        newItem.location.coord.coordinates = [
+          parseFloat(newItem.location.lng || 0),
+          parseFloat(newItem.location.lat || 0)
+        ];
+      }
+    }
 
     const result = await collection.insertOne(newItem);
 

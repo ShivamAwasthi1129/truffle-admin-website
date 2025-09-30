@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert.jsx"
 import { InventoryTable } from "@/components/inventory/inventory-table.jsx"
 import { InventoryForm } from "@/components/inventory/inventory-form.jsx"
 import { CharterFlightTable } from "@/components/charter-flights/charter-flight-table.jsx"
+import { HelicopterTable } from "@/components/helicopters/helicopter-table.jsx"
 // Removed mock data import - using real data from database
 import { CATEGORY_DISPLAY } from "@/lib/schemas/inventory-schemas.js"
 import { 
@@ -348,6 +349,8 @@ export default function InventoryModule() {
           <TabsContent key={categoryId} value={categoryId} className="mt-6">
             {categoryId === 'charter_flights' ? (
               <CharterFlightTable />
+            ) : categoryId === 'helicopters' ? (
+              <HelicopterTable />
             ) : (
               <InventoryTable
                 category={categoryId}
