@@ -327,10 +327,11 @@ export function YachtTable() {
                 <TableHeader>
                   <TableRow className="border-gray-700">
                     <TableHead className="text-gray-300">Yacht</TableHead>
+                    <TableHead className="text-gray-300">Registration</TableHead>
                     <TableHead className="text-gray-300">Specifications</TableHead>
                     <TableHead className="text-gray-300">Location</TableHead>
                     <TableHead className="text-gray-300">Capacity</TableHead>
-                    <TableHead className="text-gray-300">Price</TableHead>
+                    <TableHead className="text-gray-300">Price/Day</TableHead>
                     <TableHead className="text-gray-300">Rating</TableHead>
                     <TableHead className="text-gray-300">Status</TableHead>
                     <TableHead className="text-gray-300">Created</TableHead>
@@ -360,6 +361,16 @@ export function YachtTable() {
                       </TableCell>
                       <TableCell className="text-gray-300">
                         <div className="text-sm">
+                          {yacht.registration_no || 'N/A'}
+                        </div>
+                        {yacht.max_speed > 0 && (
+                          <div className="text-xs text-gray-400">
+                            {yacht.max_speed} knots
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-gray-300">
+                        <div className="text-sm">
                           {yacht.length_m > 0 && <div>{yacht.length_m}m length</div>}
                           {yacht.cabins > 0 && <div className="text-xs text-gray-400">{yacht.cabins} cabins</div>}
                         </div>
@@ -386,13 +397,8 @@ export function YachtTable() {
                       <TableCell className="text-gray-300">
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-3 w-3" />
-                          <span>{formatPrice(yacht.price, yacht.currency)}</span>
+                          <span>{formatPrice(yacht.price_per_day, yacht.currency)}/day</span>
                         </div>
-                        {yacht.price_per_day > 0 && (
-                          <div className="text-xs text-gray-400">
-                            {formatPrice(yacht.price_per_day, yacht.currency)}/day
-                          </div>
-                        )}
                       </TableCell>
                       <TableCell className="text-gray-300">
                         {yacht.rating > 0 ? (

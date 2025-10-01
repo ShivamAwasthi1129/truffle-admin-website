@@ -43,7 +43,6 @@ export function YachtForm({
         coordinates: [0, 0]
       }
     },
-    price: 0,
     currency: "USD",
     tags: [],
     images: [],
@@ -62,7 +61,15 @@ export function YachtForm({
       lat: 0,
       lng: 0
     },
-    available: true
+    available: true,
+    // New fields as per requirements
+    max_speed: 0,
+    range: 0,
+    last_maintenance: "",
+    insurance_expiry: "",
+    registration_no: "",
+    cabin_height: 0,
+    engine_type: ""
   })
   
   const [errors, setErrors] = useState({})
@@ -87,7 +94,6 @@ export function YachtForm({
             coordinates: [0, 0]
           }
         },
-        price: editingItem.price || 0,
         currency: editingItem.currency || "USD",
         tags: editingItem.tags || [],
         images: editingItem.images || [],
@@ -106,7 +112,15 @@ export function YachtForm({
           lat: 0,
           lng: 0
         },
-        available: editingItem.available !== undefined ? editingItem.available : true
+        available: editingItem.available !== undefined ? editingItem.available : true,
+        // New fields as per requirements
+        max_speed: editingItem.max_speed || 0,
+        range: editingItem.range || 0,
+        last_maintenance: editingItem.last_maintenance || "",
+        insurance_expiry: editingItem.insurance_expiry || "",
+        registration_no: editingItem.registration_no || "",
+        cabin_height: editingItem.cabin_height || 0,
+        engine_type: editingItem.engine_type || ""
       })
     } else {
       setFormData({
@@ -123,7 +137,6 @@ export function YachtForm({
             coordinates: [0, 0]
           }
         },
-        price: 0,
         currency: "USD",
         tags: [],
         images: [],
@@ -142,7 +155,15 @@ export function YachtForm({
           lat: 0,
           lng: 0
         },
-        available: true
+        available: true,
+        // New fields as per requirements
+        max_speed: 0,
+        range: 0,
+        last_maintenance: "",
+        insurance_expiry: "",
+        registration_no: "",
+        cabin_height: 0,
+        engine_type: ""
       })
     }
     setErrors({})
@@ -153,7 +174,6 @@ export function YachtForm({
     
     if (!formData.name.trim()) newErrors.name = "Name is required"
     if (!formData.description.trim()) newErrors.description = "Description is required"
-    if (formData.price < 0) newErrors.price = "Price cannot be negative"
     if (formData.capacity < 0) newErrors.capacity = "Capacity cannot be negative"
     if (!formData.location.address.trim()) newErrors.location = "Location address is required"
     
@@ -174,7 +194,6 @@ export function YachtForm({
         description: formData.description,
         category: formData.category,
         location: formData.location,
-        price: parseFloat(formData.price) || 0,
         currency: formData.currency,
         tags: formData.tags,
         images: formData.images,
@@ -188,7 +207,15 @@ export function YachtForm({
         cabins: parseInt(formData.cabins) || 0,
         price_per_day: parseFloat(formData.price_per_day) || 0,
         base_marina: formData.base_marina,
-        available: formData.available
+        available: formData.available,
+        // New fields as per requirements
+        max_speed: parseFloat(formData.max_speed) || 0,
+        range: parseFloat(formData.range) || 0,
+        last_maintenance: formData.last_maintenance,
+        insurance_expiry: formData.insurance_expiry,
+        registration_no: formData.registration_no,
+        cabin_height: parseFloat(formData.cabin_height) || 0,
+        engine_type: formData.engine_type
       }
       
       // Ensure location coordinates are properly formatted
@@ -332,9 +359,10 @@ export function YachtForm({
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-gray-700">
+            <TabsList className="grid w-full grid-cols-6 bg-gray-700">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="yacht">Yacht Details</TabsTrigger>
+              <TabsTrigger value="technical">Technical Specs</TabsTrigger>
               <TabsTrigger value="location">Location & Pricing</TabsTrigger>
               <TabsTrigger value="features">Features & Tags</TabsTrigger>
               <TabsTrigger value="media">Media</TabsTrigger>
@@ -457,6 +485,96 @@ export function YachtForm({
               </div>
             </TabsContent>
 
+            <TabsContent value="technical" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="registration_no">Registration Number</Label>
+                  <Input
+                    id="registration_no"
+                    value={formData.registration_no}
+                    onChange={(e) => handleInputChange('registration_no', e.target.value)}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="IND123456"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="max_speed">Max Speed (knots)</Label>
+                  <Input
+                    id="max_speed"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.max_speed}
+                    onChange={(e) => handleInputChange('max_speed', parseFloat(e.target.value))}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="25"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="range">Range (km)</Label>
+                  <Input
+                    id="range"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.range}
+                    onChange={(e) => handleInputChange('range', parseFloat(e.target.value))}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="500"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cabin_height">Cabin Height (ft)</Label>
+                  <Input
+                    id="cabin_height"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.cabin_height}
+                    onChange={(e) => handleInputChange('cabin_height', parseFloat(e.target.value))}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="6.5"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="engine_type">Engine Type</Label>
+                  <Input
+                    id="engine_type"
+                    value={formData.engine_type}
+                    onChange={(e) => handleInputChange('engine_type', e.target.value)}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="Twin Diesel"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="last_maintenance">Last Maintenance Date</Label>
+                  <Input
+                    id="last_maintenance"
+                    type="date"
+                    value={formData.last_maintenance}
+                    onChange={(e) => handleInputChange('last_maintenance', e.target.value)}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="insurance_expiry">Insurance Expiry Date</Label>
+                  <Input
+                    id="insurance_expiry"
+                    type="date"
+                    value={formData.insurance_expiry}
+                    onChange={(e) => handleInputChange('insurance_expiry', e.target.value)}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
             <TabsContent value="location" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -506,20 +624,6 @@ export function YachtForm({
                     className="bg-gray-700/50 border-gray-600 text-white"
                     placeholder="-80.1373"
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="price">Base Price (USD) *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
-                    className="bg-gray-700/50 border-gray-600 text-white"
-                    placeholder="10000"
-                  />
-                  {errors.price && <p className="text-red-400 text-sm">{errors.price}</p>}
                 </div>
 
                 <div className="space-y-2">
