@@ -327,10 +327,11 @@ export function PrivateJetTable() {
                 <TableHeader>
                   <TableRow className="border-gray-700">
                     <TableHead className="text-gray-300">Private Jet</TableHead>
+                    <TableHead className="text-gray-300">Registration</TableHead>
                     <TableHead className="text-gray-300">Manufacturer/Model</TableHead>
                     <TableHead className="text-gray-300">Location</TableHead>
                     <TableHead className="text-gray-300">Capacity</TableHead>
-                    <TableHead className="text-gray-300">Price</TableHead>
+                    <TableHead className="text-gray-300">Price/Hour</TableHead>
                     <TableHead className="text-gray-300">Rating</TableHead>
                     <TableHead className="text-gray-300">Status</TableHead>
                     <TableHead className="text-gray-300">Created</TableHead>
@@ -359,6 +360,16 @@ export function PrivateJetTable() {
                         </div>
                       </TableCell>
                       <TableCell className="text-gray-300">
+                        <div className="text-sm">
+                          {privateJet.registration_no || 'N/A'}
+                        </div>
+                        {privateJet.max_speed > 0 && (
+                          <div className="text-xs text-gray-400">
+                            {privateJet.max_speed} knots
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-gray-300">
                         <div>
                           {privateJet.manufacturer && <div className="text-sm">{privateJet.manufacturer}</div>}
                           {privateJet.model && <div className="text-xs text-gray-400">{privateJet.model}</div>}
@@ -381,13 +392,8 @@ export function PrivateJetTable() {
                       <TableCell className="text-gray-300">
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-3 w-3" />
-                          <span>{formatPrice(privateJet.price, privateJet.currency)}</span>
+                          <span>{formatPrice(privateJet.price_per_hour, privateJet.currency)}/hr</span>
                         </div>
-                        {privateJet.price_per_hour > 0 && (
-                          <div className="text-xs text-gray-400">
-                            {formatPrice(privateJet.price_per_hour, privateJet.currency)}/hr
-                          </div>
-                        )}
                       </TableCell>
                       <TableCell className="text-gray-300">
                         {privateJet.rating > 0 ? (
