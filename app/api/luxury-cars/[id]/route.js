@@ -108,10 +108,10 @@ export async function PUT(request, { params }) {
 
     // Only allow schema-defined fields for update
     const allowedFields = [
-      'name', 'description', 'category', 'location', 'price', 'currency',
+      'name', 'description', 'category', 'location', 'currency',
       'tags', 'images', 'features', 'capacity', 'availability', 'rating',
       'reviews', 'make', 'model', 'seats', 'transmission', 'price_per_day', 
-      'available', 'availability_windows'
+      'available', 'availability_windows', 'max_speed', 'range', 'last_maintenance', 'insurance_expiry'
     ]
     
     // Filter updateData to only include allowed fields
@@ -123,11 +123,13 @@ export async function PUT(request, { params }) {
     })
 
     // Ensure proper data types
-    if (filteredUpdateData.price) filteredUpdateData.price = parseFloat(filteredUpdateData.price);
     if (filteredUpdateData.price_per_day) filteredUpdateData.price_per_day = parseFloat(filteredUpdateData.price_per_day);
     if (filteredUpdateData.capacity) filteredUpdateData.capacity = parseInt(filteredUpdateData.capacity);
     if (filteredUpdateData.seats) filteredUpdateData.seats = parseInt(filteredUpdateData.seats);
     if (filteredUpdateData.rating) filteredUpdateData.rating = parseFloat(filteredUpdateData.rating);
+    // New fields data type conversions
+    if (filteredUpdateData.max_speed) filteredUpdateData.max_speed = parseFloat(filteredUpdateData.max_speed);
+    if (filteredUpdateData.range) filteredUpdateData.range = parseFloat(filteredUpdateData.range);
 
     // Ensure location coordinates are properly formatted
     if (filteredUpdateData.location) {

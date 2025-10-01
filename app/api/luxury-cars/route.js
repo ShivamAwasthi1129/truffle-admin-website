@@ -111,10 +111,10 @@ export async function POST(request) {
 
     // Only allow schema-defined fields for creation
     const allowedFields = [
-      'name', 'description', 'category', 'location', 'price', 'currency',
+      'name', 'description', 'category', 'location', 'currency',
       'tags', 'images', 'features', 'capacity', 'availability', 'rating',
       'reviews', 'make', 'model', 'seats', 'transmission', 'price_per_day', 
-      'available', 'availability_windows'
+      'available', 'availability_windows', 'max_speed', 'range', 'last_maintenance', 'insurance_expiry'
     ]
     
     // Filter itemData to only include allowed fields
@@ -140,7 +140,6 @@ export async function POST(request) {
           coordinates: [0, 0]
         }
       },
-      price: parseFloat(filteredItemData.price) || 0,
       currency: filteredItemData.currency || 'USD',
       tags: filteredItemData.tags || [],
       images: filteredItemData.images || [],
@@ -157,6 +156,11 @@ export async function POST(request) {
       price_per_day: parseFloat(filteredItemData.price_per_day) || 0,
       available: filteredItemData.available !== undefined ? filteredItemData.available : true,
       availability_windows: filteredItemData.availability_windows || [],
+      // New fields as per requirements
+      max_speed: parseFloat(filteredItemData.max_speed) || 0,
+      range: parseFloat(filteredItemData.range) || 0,
+      last_maintenance: filteredItemData.last_maintenance || '',
+      insurance_expiry: filteredItemData.insurance_expiry || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
