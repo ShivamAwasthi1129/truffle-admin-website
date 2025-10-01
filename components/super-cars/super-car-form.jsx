@@ -43,7 +43,6 @@ export function SuperCarForm({
         coordinates: [0, 0]
       }
     },
-    price: 0,
     currency: "USD",
     tags: [],
     images: [],
@@ -57,7 +56,13 @@ export function SuperCarForm({
     model: "",
     horsepower: 0,
     price_per_day: 0,
-    available: true
+    available: true,
+    // New fields as per requirements
+    max_speed: 0,
+    range: 0,
+    last_maintenance: "",
+    insurance_expiry: "",
+    transmission: ""
   })
   
   const [errors, setErrors] = useState({})
@@ -82,7 +87,6 @@ export function SuperCarForm({
             coordinates: [0, 0]
           }
         },
-        price: editingItem.price || 0,
         currency: editingItem.currency || "USD",
         tags: editingItem.tags || [],
         images: editingItem.images || [],
@@ -96,7 +100,13 @@ export function SuperCarForm({
         model: editingItem.model || "",
         horsepower: editingItem.horsepower || 0,
         price_per_day: editingItem.price_per_day || 0,
-        available: editingItem.available !== undefined ? editingItem.available : true
+        available: editingItem.available !== undefined ? editingItem.available : true,
+        // New fields as per requirements
+        max_speed: editingItem.max_speed || 0,
+        range: editingItem.range || 0,
+        last_maintenance: editingItem.last_maintenance || "",
+        insurance_expiry: editingItem.insurance_expiry || "",
+        transmission: editingItem.transmission || ""
       })
     } else {
       setFormData({
@@ -113,7 +123,6 @@ export function SuperCarForm({
             coordinates: [0, 0]
           }
         },
-        price: 0,
         currency: "USD",
         tags: [],
         images: [],
@@ -127,7 +136,13 @@ export function SuperCarForm({
         model: "",
         horsepower: 0,
         price_per_day: 0,
-        available: true
+        available: true,
+        // New fields as per requirements
+        max_speed: 0,
+        range: 0,
+        last_maintenance: "",
+        insurance_expiry: "",
+        transmission: ""
       })
     }
     setErrors({})
@@ -138,7 +153,6 @@ export function SuperCarForm({
     
     if (!formData.name.trim()) newErrors.name = "Name is required"
     if (!formData.description.trim()) newErrors.description = "Description is required"
-    if (formData.price < 0) newErrors.price = "Price cannot be negative"
     if (formData.capacity < 0) newErrors.capacity = "Capacity cannot be negative"
     if (!formData.location.address.trim()) newErrors.location = "Location address is required"
     
@@ -159,7 +173,6 @@ export function SuperCarForm({
         description: formData.description,
         category: formData.category,
         location: formData.location,
-        price: parseFloat(formData.price) || 0,
         currency: formData.currency,
         tags: formData.tags,
         images: formData.images,
@@ -173,7 +186,13 @@ export function SuperCarForm({
         model: formData.model,
         horsepower: parseInt(formData.horsepower) || 0,
         price_per_day: parseFloat(formData.price_per_day) || 0,
-        available: formData.available
+        available: formData.available,
+        // New fields as per requirements
+        max_speed: parseFloat(formData.max_speed) || 0,
+        range: parseFloat(formData.range) || 0,
+        last_maintenance: formData.last_maintenance,
+        insurance_expiry: formData.insurance_expiry,
+        transmission: formData.transmission
       }
       
       // Ensure location coordinates are properly formatted
@@ -299,9 +318,10 @@ export function SuperCarForm({
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-gray-700">
+            <TabsList className="grid w-full grid-cols-6 bg-gray-700">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="car">Car Details</TabsTrigger>
+              <TabsTrigger value="technical">Technical Specs</TabsTrigger>
               <TabsTrigger value="location">Location & Pricing</TabsTrigger>
               <TabsTrigger value="features">Features & Tags</TabsTrigger>
               <TabsTrigger value="media">Media</TabsTrigger>
@@ -432,6 +452,76 @@ export function SuperCarForm({
               </div>
             </TabsContent>
 
+            <TabsContent value="technical" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="max_speed">Max Speed (km/h)</Label>
+                  <Input
+                    id="max_speed"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.max_speed}
+                    onChange={(e) => handleInputChange('max_speed', parseFloat(e.target.value))}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="350"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="range">Range (km)</Label>
+                  <Input
+                    id="range"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.range}
+                    onChange={(e) => handleInputChange('range', parseFloat(e.target.value))}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                    placeholder="500"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="transmission">Transmission</Label>
+                  <Select value={formData.transmission} onValueChange={(value) => handleInputChange('transmission', value)}>
+                    <SelectTrigger className="bg-gray-700/50 border-gray-600 text-white">
+                      <SelectValue placeholder="Select transmission" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                      <SelectItem value="Manual">Manual</SelectItem>
+                      <SelectItem value="Automatic">Automatic</SelectItem>
+                      <SelectItem value="Semi-Automatic">Semi-Automatic</SelectItem>
+                      <SelectItem value="CVT">CVT</SelectItem>
+                      <SelectItem value="DCT">DCT (Dual Clutch)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="last_maintenance">Last Maintenance Date</Label>
+                  <Input
+                    id="last_maintenance"
+                    type="date"
+                    value={formData.last_maintenance}
+                    onChange={(e) => handleInputChange('last_maintenance', e.target.value)}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="insurance_expiry">Insurance Expiry Date</Label>
+                  <Input
+                    id="insurance_expiry"
+                    type="date"
+                    value={formData.insurance_expiry}
+                    onChange={(e) => handleInputChange('insurance_expiry', e.target.value)}
+                    className="bg-gray-700/50 border-gray-600 text-white"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
             <TabsContent value="location" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -481,20 +571,6 @@ export function SuperCarForm({
                     className="bg-gray-700/50 border-gray-600 text-white"
                     placeholder="55.2708"
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="price">Base Price (USD) *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
-                    className="bg-gray-700/50 border-gray-600 text-white"
-                    placeholder="1500"
-                  />
-                  {errors.price && <p className="text-red-400 text-sm">{errors.price}</p>}
                 </div>
 
                 <div className="space-y-2">

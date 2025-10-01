@@ -26,7 +26,8 @@ import {
   Users,
   Star,
   Calendar,
-  Filter
+  Filter,
+  Gauge
 } from "lucide-react"
 import { SuperCarForm } from "./super-car-form.jsx"
 
@@ -330,7 +331,8 @@ export function SuperCarTable() {
                     <TableHead className="text-gray-300">Make/Model</TableHead>
                     <TableHead className="text-gray-300">Location</TableHead>
                     <TableHead className="text-gray-300">Capacity</TableHead>
-                    <TableHead className="text-gray-300">Price</TableHead>
+                    <TableHead className="text-gray-300">Max Speed</TableHead>
+                    <TableHead className="text-gray-300">Price/Day</TableHead>
                     <TableHead className="text-gray-300">Horsepower</TableHead>
                     <TableHead className="text-gray-300">Rating</TableHead>
                     <TableHead className="text-gray-300">Status</TableHead>
@@ -381,14 +383,20 @@ export function SuperCarTable() {
                       </TableCell>
                       <TableCell className="text-gray-300">
                         <div className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
-                          <span>{formatPrice(superCar.price, superCar.currency)}</span>
+                          <Gauge className="h-3 w-3" />
+                          <span>{superCar.max_speed || 0} km/h</span>
                         </div>
-                        {superCar.price_per_day > 0 && (
+                        {superCar.range > 0 && (
                           <div className="text-xs text-gray-400">
-                            {formatPrice(superCar.price_per_day, superCar.currency)}/day
+                            Range: {superCar.range} km
                           </div>
                         )}
+                      </TableCell>
+                      <TableCell className="text-gray-300">
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-3 w-3" />
+                          <span>{formatPrice(superCar.price_per_day, superCar.currency)}/day</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-gray-300">
                         {superCar.horsepower > 0 ? (
