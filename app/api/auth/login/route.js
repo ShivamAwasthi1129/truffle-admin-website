@@ -96,15 +96,16 @@ export async function POST(request) {
         { $set: { lastLoginAt: new Date() } }
       );
 
-      // Create JWT token for vendor with admin role
+      // Create JWT token for vendor with vendor role
       const token = generateToken({
         id: vendor._id.toString(),
         email: vendor.email,
-        role: 'admin', // Vendors get admin role when verified
-        permissions: ['inventory', 'vendors', 'clients', 'concierges', 'bookings', 'analytics'],
+        role: 'vendor', // Vendors get vendor role
+        permissions: ['inventory'], // Vendors can only access inventory
         userType: 'vendor',
         businessName: vendor.businessName,
-        verificationStatus: vendor.verificationStatus
+        verificationStatus: vendor.verificationStatus,
+        serviceCategories: vendor.serviceCategories // Include permitted categories
       });
 
       // Generate refresh token (valid for 7 days)
@@ -123,12 +124,13 @@ export async function POST(request) {
           email: vendor.email,
           firstName: vendor.firstName,
           lastName: vendor.lastName,
-          role: 'admin',
-          permissions: ['inventory', 'vendors', 'clients', 'concierges', 'bookings', 'analytics'],
+          role: 'vendor',
+          permissions: ['inventory'],
           isActive: vendor.accountStatus === 'active',
           businessName: vendor.businessName,
           verificationStatus: vendor.verificationStatus,
-          userType: 'vendor'
+          userType: 'vendor',
+          serviceCategories: vendor.serviceCategories
         }
       });
     }

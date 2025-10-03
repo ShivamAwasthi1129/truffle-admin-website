@@ -32,11 +32,66 @@ export default function InventoryModule() {
   const [success, setSuccess] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [permittedCategories, setPermittedCategories] = useState(null) // null = loading, [] = no categories, [array] = permitted categories
 
-  // Load inventory from API on component mount
+  // Load user permissions and inventory on component mount
   useEffect(() => {
-    loadInventory()
+    loadUserPermissions()
   }, [])
+
+  // Load inventory when permitted categories change
+  useEffect(() => {
+    if (permittedCategories !== null) {
+      loadInventory()
+    }
+  }, [permittedCategories])
+
+  const loadUserPermissions = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      // Decode token to get user info
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      
+      if (payload.userType === 'vendor') {
+        // Get vendor's permitted categories from JWT token
+        if (payload.serviceCategories && Array.isArray(payload.serviceCategories)) {
+          const categories = payload.serviceCategories.map(sc => sc.category)
+          setPermittedCategories(categories)
+          
+          // Set first permitted category as active if current active category is not permitted
+          if (categories.length > 0 && !categories.includes(activeCategory)) {
+            setActiveCategory(categories[0])
+          }
+        } else {
+          // Fallback: no categories permitted
+          setPermittedCategories([])
+        }
+      } else {
+        // Admin users can see all categories
+        setPermittedCategories(Object.keys(CATEGORY_DISPLAY))
+      }
+    } catch (error) {
+      console.error('Error loading user permissions:', error)
+      // Default to no categories if error (safer for vendors)
+      const token = localStorage.getItem('token')
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          if (payload.userType === 'vendor') {
+            setPermittedCategories([])
+          } else {
+            setPermittedCategories(Object.keys(CATEGORY_DISPLAY))
+          }
+        } catch {
+          setPermittedCategories([])
+        }
+      } else {
+        setPermittedCategories([])
+      }
+    }
+  }
 
   const loadInventory = async () => {
     try {
@@ -46,10 +101,17 @@ export default function InventoryModule() {
       const token = localStorage.getItem('token')
       let allItems = []
       
-      // Load data from all category-specific APIs
-      const categories = Object.keys(CATEGORY_DISPLAY)
+      // Wait for permitted categories to be loaded, or use empty array for vendors
+      if (permittedCategories === null) {
+        // Still loading permissions, skip for now
+        return
+      }
       
-      for (const category of categories) {
+      // Use permitted categories (empty array for vendors with no categories)
+      const categoriesToLoad = permittedCategories.length > 0 ? permittedCategories : []
+      
+      // Load data from permitted category-specific APIs
+      for (const category of categoriesToLoad) {
         try {
           const apiEndpoint = `/api/${category.replace('_', '-')}`
           const response = await fetch(apiEndpoint, {
@@ -267,7 +329,8 @@ export default function InventoryModule() {
 
       {/* Category Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {Object.entries(CATEGORY_DISPLAY).map(([categoryId, categoryInfo]) => {
+        {permittedCategories && permittedCategories.length > 0 ? permittedCategories.map((categoryId) => {
+          const categoryInfo = CATEGORY_DISPLAY[categoryId]
           const stats = getCategoryStats(categoryId)
           const isActive = activeCategory === categoryId
           
@@ -290,7 +353,25 @@ export default function InventoryModule() {
               </CardContent>
             </Card>
           )
-        })}
+        }) : permittedCategories === null ? (
+          // Loading state
+          <Card className="bg-gray-800/50 border-gray-700">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl mb-2">⏳</div>
+              <h3 className="font-semibold text-white text-sm">Loading...</h3>
+              <p className="text-xs text-gray-400 mt-1">Loading categories</p>
+            </CardContent>
+          </Card>
+        ) : (
+          // No categories available
+          <Card className="bg-gray-800/50 border-gray-700">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl mb-2">🚫</div>
+              <h3 className="font-semibold text-white text-sm">No Categories</h3>
+              <p className="text-xs text-gray-400 mt-1">No access granted</p>
+            </CardContent>
+          </Card>
+        )}
         
         {/* Total Value Card */}
         <Card className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/50">
@@ -335,47 +416,80 @@ export default function InventoryModule() {
       </Card>
 
       {/* Category Tabs */}
-      <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
-        <TabsList className="grid w-full grid-cols-6 bg-gray-800 border-gray-700">
-          {Object.entries(CATEGORY_DISPLAY).map(([categoryId, categoryInfo]) => (
-            <TabsTrigger 
-              key={categoryId} 
-              value={categoryId}
-              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"
-            >
-              <span className="mr-2">{categoryInfo.icon}</span>
-              {categoryInfo.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {Object.entries(CATEGORY_DISPLAY).map(([categoryId, categoryInfo]) => (
-          <TabsContent key={categoryId} value={categoryId} className="mt-6">
-            {categoryId === 'charter_flights' ? (
-              <CharterFlightTable />
-            ) : categoryId === 'helicopters' ? (
-              <HelicopterTable />
-            ) : categoryId === 'luxury_cars' ? (
-              <LuxuryCarTable />
-            ) : categoryId === 'private_jets' ? (
-              <PrivateJetTable />
-            ) : categoryId === 'super_cars' ? (
-              <SuperCarTable />
-            ) : categoryId === 'yachts' ? (
-              <YachtTable />
-            ) : (
-              <InventoryTable
-                category={categoryId}
-                items={getFilteredItems(categoryId)}
-                onAdd={handleAdd}
-                onEdit={handleEdit}
-                onDelete={(itemId) => handleDelete(itemId, categoryId)}
-                onView={handleView}
-              />
+      {permittedCategories === null ? (
+        <div className="text-center py-12">
+          <div className="text-4xl mb-4">⏳</div>
+          <h3 className="text-xl font-semibold text-gray-300 mb-2">Loading Permissions...</h3>
+          <p className="text-gray-400">Please wait while we load your access permissions.</p>
+        </div>
+      ) : (
+        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
+          <TabsList className={`grid w-full ${permittedCategories.length > 0 ? `grid-cols-${permittedCategories.length}` : 'grid-cols-1'} bg-gray-800 border-gray-700`}>
+            {permittedCategories.length > 0 ? permittedCategories.map((categoryId) => {
+              const categoryInfo = CATEGORY_DISPLAY[categoryId]
+              return (
+                <TabsTrigger 
+                  key={categoryId} 
+                  value={categoryId}
+                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"
+                >
+                  <span className="mr-2">{categoryInfo.icon}</span>
+                  {categoryInfo.label}
+                </TabsTrigger>
+              )
+            }) : (
+              <TabsTrigger 
+                value="no-categories"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"
+              >
+                <span className="mr-2">🚫</span>
+                No Categories Available
+              </TabsTrigger>
             )}
-          </TabsContent>
-        ))}
-      </Tabs>
+          </TabsList>
+
+          {permittedCategories.length > 0 ? permittedCategories.map((categoryId) => {
+            const categoryInfo = CATEGORY_DISPLAY[categoryId]
+            return (
+              <TabsContent key={categoryId} value={categoryId} className="mt-6">
+                {categoryId === 'charter_flights' ? (
+                  <CharterFlightTable />
+                ) : categoryId === 'helicopters' ? (
+                  <HelicopterTable />
+                ) : categoryId === 'luxury_cars' ? (
+                  <LuxuryCarTable />
+                ) : categoryId === 'private_jets' ? (
+                  <PrivateJetTable />
+                ) : categoryId === 'super_cars' ? (
+                  <SuperCarTable />
+                ) : categoryId === 'yachts' ? (
+                  <YachtTable />
+                ) : (
+                  <InventoryTable
+                    category={categoryId}
+                    items={getFilteredItems(categoryId)}
+                    onAdd={handleAdd}
+                    onEdit={handleEdit}
+                    onDelete={(itemId) => handleDelete(itemId, categoryId)}
+                    onView={handleView}
+                  />
+                )}
+              </TabsContent>
+            )
+          }) : (
+            <TabsContent value="no-categories" className="mt-6">
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🚫</div>
+                <h3 className="text-xl font-semibold text-gray-300 mb-2">No Categories Available</h3>
+                <p className="text-gray-400">
+                  You don't have permission to access any inventory categories. 
+                  Please contact an administrator to assign categories to your account.
+                </p>
+              </div>
+            </TabsContent>
+          )}
+        </Tabs>
+      )}
 
       {/* Inventory Form Modal */}
       <InventoryForm
