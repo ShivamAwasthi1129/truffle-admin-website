@@ -40,6 +40,11 @@ export async function GET(request) {
       
       let query = {};
       
+      // Filter by vendor_id for vendor users
+      if (decoded.userType === 'vendor') {
+        query.vendor_id = decoded.id;
+      }
+      
       if (search) {
         query.$or = [
           { name: { $regex: search, $options: 'i' } },
@@ -63,6 +68,11 @@ export async function GET(request) {
         const collection = await getCollection(collectionName);
         
         let query = {};
+        
+        // Filter by vendor_id for vendor users
+        if (decoded.userType === 'vendor') {
+          query.vendor_id = decoded.id;
+        }
         
         if (search) {
           query.$or = [
@@ -157,6 +167,7 @@ export async function POST(request) {
       available: itemData.available !== undefined ? itemData.available : true,
       tags: itemData.tags || [],
       images: itemData.images || [],
+      vendor_id: decoded.userType === 'vendor' ? decoded.id : null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       ...itemData // Include all other fields specific to the category

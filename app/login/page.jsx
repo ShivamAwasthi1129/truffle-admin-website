@@ -9,12 +9,13 @@ import { Input } from "@/components/ui/input.jsx"
 import { Label } from "@/components/ui/label.jsx"
 import { Alert, AlertDescription } from "@/components/ui/alert.jsx"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog.jsx"
-import { Eye, EyeOff, Lock, Mail, User, Key } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail, User, Key, Building2, Shield } from "lucide-react"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: "",
-    password: ""
+    password: "",
+    userType: "admin" // Default to admin
   })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -39,7 +40,7 @@ export default function LoginPage() {
     setError("")
 
     try {
-      const result = await login(formData.email, formData.password)
+      const result = await login(formData.email, formData.password, formData.userType)
       
       if (result.success) {
         // Redirect to dashboard
@@ -138,6 +139,38 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
+                <Label className="text-gray-300">Login As</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant={formData.userType === "admin" ? "default" : "outline"}
+                    className={`flex items-center justify-center gap-2 h-12 ${
+                      formData.userType === "admin" 
+                        ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                        : "bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-600"
+                    }`}
+                    onClick={() => setFormData({...formData, userType: "admin"})}
+                  >
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={formData.userType === "vendor" ? "default" : "outline"}
+                    className={`flex items-center justify-center gap-2 h-12 ${
+                      formData.userType === "vendor" 
+                        ? "bg-purple-600 hover:bg-purple-700 text-white" 
+                        : "bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-600"
+                    }`}
+                    onClick={() => setFormData({...formData, userType: "vendor"})}
+                  >
+                    <Building2 className="h-4 w-4" />
+                    Vendor
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="password" className="text-gray-300">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -188,9 +221,18 @@ export default function LoginPage() {
               <div className="text-center text-sm text-gray-400">
                 <p className="mb-2">Demo Credentials:</p>
                 <div className="space-y-1 text-xs">
-                  <p><strong>Super Admin:</strong> superadmin@trufle.com / SuperAdmin123!</p>
-                  <p><strong>Admin:</strong> admin@trufle.com / Admin123!</p>
-                  <p><strong>Billing:</strong> billing@trufle.com / Billing123!</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="bg-gray-700/30 p-2 rounded">
+                      <p className="text-blue-400 font-semibold mb-1">Admin Users:</p>
+                      <p><strong>Super Admin:</strong> superadmin@trufle.com / SuperAdmin123!</p>
+                      <p><strong>Admin:</strong> admin@trufle.com / Admin123!</p>
+                      <p><strong>Billing:</strong> billing@trufle.com / Billing123!</p>
+                    </div>
+                    <div className="bg-gray-700/30 p-2 rounded">
+                      <p className="text-purple-400 font-semibold mb-1">Vendor:</p>
+                      <p><strong>Luxury Jets:</strong> akash@hexerve.com / vendor123</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

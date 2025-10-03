@@ -32,6 +32,11 @@ export async function GET(request) {
     
     let query = {};
     
+    // Filter by vendor_id for vendor users
+    if (decoded.userType === 'vendor') {
+      query.vendor_id = decoded.id;
+    }
+    
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },

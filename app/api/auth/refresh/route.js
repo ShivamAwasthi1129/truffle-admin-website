@@ -108,6 +108,12 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error('Error refreshing token:', error);
+    
+    // Handle MongoDB connection errors gracefully
+    if (error.message.includes('ETIMEOUT') || error.message.includes('querySrv')) {
+      return NextResponse.json({ error: 'Database connection timeout. Please try again.' }, { status: 503 });
+    }
+    
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

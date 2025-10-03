@@ -42,6 +42,16 @@ export function AuthProvider({ children }) {
         const data = await response.json()
         setUser(data.user)
         setToken(tokenToVerify)
+      } else if (response.status === 503) {
+        // Database connection timeout - keep user logged in with cached data
+        console.warn('Database connection timeout, using cached user data')
+        const storedUser = localStorage.getItem('user')
+        if (storedUser) {
+          setUser(JSON.parse(storedUser))
+          setToken(tokenToVerify)
+        } else {
+          logout()
+        }
       } else {
         // Token is invalid, try to refresh
         const storedRefreshToken = localStorage.getItem('refreshToken')
@@ -76,6 +86,17 @@ export function AuthProvider({ children }) {
         localStorage.setItem('user', JSON.stringify(data.user))
         setToken(data.token)
         setUser(data.user)
+      } else if (response.status === 503) {
+        // Database connection timeout - keep user logged in with cached data
+        console.warn('Database connection timeout during refresh, using cached user data')
+        const storedUser = localStorage.getItem('user')
+        const storedToken = localStorage.getItem('token')
+        if (storedUser && storedToken) {
+          setUser(JSON.parse(storedUser))
+          setToken(storedToken)
+        } else {
+          logout()
+        }
       } else {
         // Refresh failed, logout
         logout()
@@ -88,14 +109,14 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const login = async (email, password) => {
+  const login = async (email, password, userType = 'admin') => {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, userType }),
       })
 
       const data = await response.json()
