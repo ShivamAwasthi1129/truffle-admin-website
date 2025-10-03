@@ -10,60 +10,132 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const collection = await getCollection('admin_users');
-    const user = await collection.findOne({ email });
+    // First, try to find in admin_users collection
+    const adminCollection = await getCollection('admin_users');
+    const adminUser = await adminCollection.findOne({ email });
 
-    if (!user) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    if (adminUser) {
+      // Handle admin user login
+      if (!adminUser.isActive) {
+        return NextResponse.json({ error: 'Account is deactivated. Please contact administrator.' }, { status: 401 });
+      }
+
+      const isMatch = await comparePassword(password, adminUser.password);
+
+      if (!isMatch) {
+        return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      }
+
+      const token = generateToken({
+        id: adminUser._id.toString(),
+        email: adminUser.email,
+        role: adminUser.role,
+        permissions: adminUser.permissions || [],
+        userType: 'admin'
+      });
+
+      // Generate refresh token (valid for 7 days)
+      const refreshToken = generateToken({
+        id: adminUser._id.toString(),
+        email: adminUser.email,
+        type: 'refresh'
+      }, '7d');
+
+      // Update last login
+      await adminCollection.updateOne(
+        { _id: adminUser._id },
+        { $set: { lastLogin: new Date() } }
+      );
+
+      return NextResponse.json({ 
+        message: 'Login successful', 
+        token,
+        refreshToken,
+        user: { 
+          _id: adminUser._id.toString(), 
+          email: adminUser.email, 
+          firstName: adminUser.firstName,
+          lastName: adminUser.lastName,
+          role: adminUser.role, 
+          permissions: adminUser.permissions || [],
+          isActive: adminUser.isActive,
+          department: adminUser.department,
+          phone: adminUser.phone,
+          userType: 'admin'
+        } 
+      });
     }
 
-    // Check if user is active
-    if (!user.isActive) {
-      return NextResponse.json({ error: 'Account is deactivated. Please contact administrator.' }, { status: 401 });
+    // If not found in admin_users, check vendors collection
+    const vendorsCollection = await getCollection('vendors');
+    const vendor = await vendorsCollection.findOne({ email });
+
+    if (vendor) {
+      // Check password
+      const isPasswordValid = await comparePassword(password, vendor.password);
+      
+      if (!isPasswordValid) {
+        return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      }
+
+      // Check if vendor account is active
+      if (vendor.accountStatus !== 'active') {
+        return NextResponse.json({ error: 'Account is not active' }, { status: 401 });
+      }
+
+      // Check if vendor is verified and has admin panel access
+      if (vendor.verificationStatus !== 'verified' || !vendor.adminPanelAccess) {
+        return NextResponse.json({ 
+          error: 'Account verification pending. Please wait for approval to access admin panel.' 
+        }, { status: 403 });
+      }
+
+      // Update last login
+      await vendorsCollection.updateOne(
+        { _id: vendor._id },
+        { $set: { lastLoginAt: new Date() } }
+      );
+
+      // Create JWT token for vendor with admin role
+      const token = generateToken({
+        id: vendor._id.toString(),
+        email: vendor.email,
+        role: 'admin', // Vendors get admin role when verified
+        permissions: ['inventory', 'vendors', 'clients', 'concierges', 'bookings', 'analytics'],
+        userType: 'vendor',
+        businessName: vendor.businessName,
+        verificationStatus: vendor.verificationStatus
+      });
+
+      // Generate refresh token (valid for 7 days)
+      const refreshToken = generateToken({
+        id: vendor._id.toString(),
+        email: vendor.email,
+        type: 'refresh'
+      }, '7d');
+
+      return NextResponse.json({
+        message: 'Login successful',
+        token,
+        refreshToken,
+        user: {
+          _id: vendor._id.toString(),
+          email: vendor.email,
+          firstName: vendor.firstName,
+          lastName: vendor.lastName,
+          role: 'admin',
+          permissions: ['inventory', 'vendors', 'clients', 'concierges', 'bookings', 'analytics'],
+          isActive: vendor.accountStatus === 'active',
+          businessName: vendor.businessName,
+          verificationStatus: vendor.verificationStatus,
+          userType: 'vendor'
+        }
+      });
     }
 
-    const isMatch = await comparePassword(password, user.password);
+    // If not found in either collection
+    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
 
-    if (!isMatch) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-    }
-
-    const token = generateToken({
-      id: user._id.toString(),
-      email: user.email,
-      role: user.role,
-      permissions: user.permissions || []
-    });
-
-    // Generate refresh token (valid for 7 days)
-    const refreshToken = generateToken({
-      id: user._id.toString(),
-      email: user.email,
-      type: 'refresh'
-    }, '7d');
-
-    // Update last login
-    await collection.updateOne(
-      { _id: user._id },
-      { $set: { lastLogin: new Date() } }
-    );
-
-    return NextResponse.json({ 
-      message: 'Login successful', 
-      token,
-      refreshToken,
-      user: { 
-        _id: user._id.toString(), 
-        email: user.email, 
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role, 
-        permissions: user.permissions || [],
-        isActive: user.isActive,
-        department: user.department,
-        phone: user.phone
-      } 
-    });
   } catch (error) {
     console.error('Error during login:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

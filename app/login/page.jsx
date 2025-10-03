@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button.jsx"
 import { Input } from "@/components/ui/input.jsx"
 import { Label } from "@/components/ui/label.jsx"
 import { Alert, AlertDescription } from "@/components/ui/alert.jsx"
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog.jsx"
+import { Eye, EyeOff, Lock, Mail, User, Key } from "lucide-react"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -18,6 +19,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showPasswordRequest, setShowPasswordRequest] = useState(false)
+  const [passwordRequestEmail, setPasswordRequestEmail] = useState("")
+  const [passwordRequestLoading, setPasswordRequestLoading] = useState(false)
+  const [passwordRequestMessage, setPasswordRequestMessage] = useState("")
   const { login, user, isAuthenticated } = useAuth()
   const router = useRouter()
 
@@ -54,6 +59,41 @@ export default function LoginPage() {
       ...formData,
       [e.target.name]: e.target.value
     })
+  }
+
+  const handlePasswordRequest = async (e) => {
+    e.preventDefault()
+    setPasswordRequestLoading(true)
+    setPasswordRequestMessage("")
+
+    try {
+      const response = await fetch('/api/auth/password-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: passwordRequestEmail
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setPasswordRequestMessage("Password request sent successfully! An admin will review your request and change your password if approved.")
+        setPasswordRequestEmail("")
+        setTimeout(() => {
+          setShowPasswordRequest(false)
+          setPasswordRequestMessage("")
+        }, 3000)
+      } else {
+        setPasswordRequestMessage(data.error || 'Failed to send password request')
+      }
+    } catch (error) {
+      setPasswordRequestMessage('Network error. Please try again.')
+    } finally {
+      setPasswordRequestLoading(false)
+    }
   }
 
   return (
@@ -130,6 +170,18 @@ export default function LoginPage() {
               >
                 {loading ? "Signing In..." : "Sign In"}
               </Button>
+
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-gray-400 hover:text-white text-sm"
+                  onClick={() => setShowPasswordRequest(true)}
+                >
+                  <Key className="h-4 w-4 mr-2" />
+                  Request Password Change
+                </Button>
+              </div>
             </form>
 
             <div className="mt-6 pt-6 border-t border-gray-700">
@@ -144,6 +196,62 @@ export default function LoginPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Password Request Dialog */}
+        <Dialog open={showPasswordRequest} onOpenChange={setShowPasswordRequest}>
+          <DialogContent className="bg-gray-800 border-gray-700">
+            <DialogHeader>
+              <DialogTitle className="text-white">Request Password Change</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Enter your email address to request a password change. An admin will review your request and change your password if approved.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={handlePasswordRequest} className="space-y-4">
+              {passwordRequestMessage && (
+                <Alert className={passwordRequestMessage.includes('successfully') ? "bg-green-500/10 border-green-500/20" : "bg-red-500/10 border-red-500/20"}>
+                  <AlertDescription className={passwordRequestMessage.includes('successfully') ? "text-green-400" : "text-red-400"}>
+                    {passwordRequestMessage}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="request-email" className="text-gray-300">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    id="request-email"
+                    type="email"
+                    value={passwordRequestEmail}
+                    onChange={(e) => setPasswordRequestEmail(e.target.value)}
+                    className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400"
+                    placeholder="Enter your email address"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+                  onClick={() => setShowPasswordRequest(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+                  disabled={passwordRequestLoading}
+                >
+                  {passwordRequestLoading ? "Sending..." : "Send Request"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
