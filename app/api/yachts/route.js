@@ -32,6 +32,11 @@ export async function GET(request) {
     
     let query = {};
     
+    // Filter by vendor_id for vendor users
+    if (decoded.userType === 'vendor') {
+      query.vendor_id = decoded.id;
+    }
+    
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -113,7 +118,7 @@ export async function POST(request) {
       'name', 'description', 'category', 'location', 'currency',
       'tags', 'images', 'features', 'capacity', 'availability', 'rating',
       'reviews', 'length_m', 'cabins', 'price_per_day', 'base_marina', 'available',
-      'max_speed', 'range', 'last_maintenance', 'insurance_expiry', 'registration_no', 'cabin_height', 'engine_type'
+      'max_speed', 'range', 'last_maintenance', 'insurance_expiry', 'registration_no', 'cabin_height', 'engine_type', 'vendor_id'
     ]
     
     // Filter itemData to only include allowed fields
@@ -166,6 +171,7 @@ export async function POST(request) {
       registration_no: filteredItemData.registration_no || '',
       cabin_height: parseFloat(filteredItemData.cabin_height) || 0,
       engine_type: filteredItemData.engine_type || '',
+      vendor_id: decoded.userType === 'vendor' ? decoded.id : null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

@@ -204,7 +204,7 @@ export default function LoginPage() {
                 {loading ? "Signing In..." : "Sign In"}
               </Button>
 
-              <div className="text-center">
+              {/* <div className="text-center">
                 <Button
                   type="button"
                   variant="link"
@@ -214,7 +214,7 @@ export default function LoginPage() {
                   <Key className="h-4 w-4 mr-2" />
                   Request Password Change
                 </Button>
-              </div>
+              </div> */}
             </form>
 
             <div className="mt-6 pt-6 border-t border-gray-700">
