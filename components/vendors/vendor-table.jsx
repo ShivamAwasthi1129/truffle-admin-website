@@ -199,6 +199,16 @@ export function VendorTable() {
       suspended: <AlertTriangle className="h-3 w-3" />
     }
 
+    // Handle undefined/null status
+    if (!status) {
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Unknown
+        </Badge>
+      )
+    }
+
     return (
       <Badge variant={variants[status] || "secondary"} className="flex items-center gap-1">
         {icons[status]}
@@ -212,6 +222,15 @@ export function VendorTable() {
       active: "default",
       inactive: "secondary",
       suspended: "destructive"
+    }
+
+    // Handle undefined/null status
+    if (!status) {
+      return (
+        <Badge variant="secondary">
+          Unknown
+        </Badge>
+      )
     }
 
     return (
